@@ -3,6 +3,7 @@
 1. Подготовить Бэкенд
 	1. Сгенерировать базу данных 
 	2. Реализовать пагинацию на бэкенде
+	3. Проверка работы
 2. Реализовать пагинацию на фронтенде
 	1. Обновление Redux-слайса
 	2. Создание компонента пагинации
@@ -12,12 +13,12 @@
 Создать 100000 новых строк для базы данных легче используя генератор случайных данных. 
 
 Установка:
-```
+```bash
 go get github.com/go-faker/faker/v4
 ```
 Добавляем новый файл в проект, в котором будет заполнятся база данных
 
-```
+```go
 import (
 	...
 	...
@@ -57,18 +58,18 @@ func main(){
 <img src="assets/step1.png" alt="Скриншот кода для генерации данных" width="600">
 
 Запустите скрипт:
-```
+```bash
 go run cmd/seed/main.go
 ```
 Должно появиться 100000 новых строк в указаной таблице базы данных
 
-<img src="assets/step2.png" alt="Скриншот кода для генерации данных" width="600">
+<img src="assets/step2.png" alt="Скриншот данных из БД" width="600">
 
 ## Реализация пагинации на бэкенде
 Нужно добавить поддержку limit и offset.
 Функция теперь принимает limit & offset, а возвращает не только срез данных, но и total - общее количество записей
 
-```
+```go
 // internal/app/repository/my_repository.go
 
 func (r *Repository) GetMyEntities(filters FilterParams, limit, offset int) ([]ds.MyEntity, int64, error) {
@@ -89,7 +90,7 @@ func (r *Repository) GetMyEntities(filters FilterParams, limit, offset int) ([]d
 
 обновляем обработчик (handler):
 
-```
+```go
 // internal/app/handler/my_handler.go
 // @Param ...
 // @Param ...
@@ -121,7 +122,7 @@ func (h *Handler) GetMyEntitiesHandler( c *gin.Context){
 
 Слайс должен хранить в себе состояние пагинации и передавать его в thunk
 
-```
+```tsx
 // src/store/slices/mySlice.ts
 
 //1. Обновляем интерфейс
@@ -180,6 +181,16 @@ const mySlice = createSlice({
 export const { setCurrentPage /* здесь также должна быть логика для фильтров */ } = mySlice.actions;
 
 ```
+## Проверка работы бэкенда
+
+Нужно проверить, что бэкенд полностью рабочий и работает сам по себе.
+
+Для этого воспользуемся Postman
+
+Создаем запрос, в котором задействываем page и limit.
+Бэкенд должен выдать все элементы, которые находятся на этой странице
+
+<img src="assets/step2_2.png" alt="Скриншот postman" width="600">
 
 ## Создание компонента с пагинацией
 
@@ -188,7 +199,7 @@ export const { setCurrentPage /* здесь также должна быть л�
 src/components/Pagination/Pagination.tsx
 ```
 Используя bootstrap создаем компонент, в котором обрабатываем пагинацию :
-```
+```go
 import { Pagination as BootstrapPagination } from 'react-bootstrap'
 
 interface PaginationProps {
@@ -231,7 +242,7 @@ export const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages,
 
 Добавляем компонент, который создали в предыдущем этапе, на страницу, где отображается список
 
-```
+```tsx
 // src/pages/ModeratorPage/ModeratorPage.tsx
 import {useEffect} from 'react';
 import { Pagination } from '../../components/Pagination/Pagination';
@@ -298,36 +309,36 @@ export const ModeratorPage: React.FC = () => {
 ```
 Пример готовой пагинации:
 
-<img src="assets/step3.png" alt="Скриншот кода для генерации данных" width="600">
+<img src="assets/step3.png" alt="Скриншот пагинации на фронтенде" width="600">
 
 ## Создание и удаление индексов
 
 Индексы создаются для полей, по которым часто происходит фильтрация
 
 Команда для создания индекса:
-```
+```sql
 CREATE INDEX idx_column_name ON table_name(column_name);
 ```
 
-<img src="assets/step6.png" alt="Скриншот кода для генерации данных" width="600">
+<img src="assets/step6.png" alt="Скриншот SQL" width="600">
 
 Для демонстрации работы индексов нужно  создать индекс, проанализировать запрос и зафиксировать время запроса :
-```
+```sql
 EXPLAIN ANALYZE SELECT * FROM table_name WHERE column_name = 'some_value';
 ```
 
-<img src="assets/step7.png" alt="Скриншот кода для генерации данных" width="600">
+<img src="assets/step7.png" alt="Скриншот SQL" width="600">
 
 Команда для удаления индекса:
-```
+```sql
 DROP INDEX idx_column_name;
 ```
 
-<img src="assets/step4.png" alt="Скриншот кода для генерации данных" width="600">
+<img src="assets/step4.png" alt="Скриншот SQL" width="600">
 
 Снова анализируем время запроса:
-```
+```sql
 EXPLAIN ANALYZE SELECT * FROM table_name WHERE column_name = 'some_value';
 ```
 
-<img src="assets/step5.png" alt="Скриншот кода для генерации данных" width="600">
+<img src="assets/step5.png" alt="Скриншот SQL" width="600">
